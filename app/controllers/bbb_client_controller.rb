@@ -15,6 +15,10 @@ module BigBlue
     def status
       render json: get_status(params)
     end
+    
+    def running
+      render json: is_running(params)
+    end   
 
     private
 
@@ -24,22 +28,25 @@ module BigBlue
       meeting_id = args['meetingID']
       attendee_pw = args['attendeePW']
       moderator_pw = args['moderatorPW']
+      join_only = args['joinonly']
 
-      query = {
-        meetingID: meeting_id,
-        attendeePW: attendee_pw,
-        moderatorPW: moderator_pw,
-        logoutURL: Discourse.base_url
-      }.to_query
+      unless join_only == "true" then
+        query = {
+          meetingID: meeting_id,
+          attendeePW: attendee_pw,
+          moderatorPW: moderator_pw,
+          logoutURL: Discourse.base_url
+        }.to_query
 
-      create_url = build_url("create", query)
-      response = Excon.get(create_url)
+        create_url = build_url("create", query)
+        response = Excon.get(create_url)
 
-      if response.status != 200
-        Rails.logger.warn("Could not create meeting: #{response.inspect}")
-        return false
+        if response.status != 200
+          Rails.logger.warn("Could not create meeting: #{response.inspect}")
+          return false
+        end
       end
-
+      
       join_params = {
         fullName: current_user.name || current_user.username,
         meetingID: meeting_id,
@@ -50,6 +57,29 @@ module BigBlue
       build_url("join", join_params)
     end
 
+    def is_running(args)
+      return {} unless SiteSetting.bbb_endpoint && SiteSetting.bbb_secret    
+      
+      url = build_url("isMeetingRunning", "meetingID=#{args['meeting_id']}")
+      response = Excon.get(url)
+      data = Hash.from_xml(response.body)
+      
+      if data['response']['returncode'] == "SUCCESS"
+      
+        if data['response']['running'] == "true"
+          running = true
+        else
+          running = false
+        end
+        
+        {
+          running: running
+        }
+      else
+        {}  
+      end
+    end
+
     def get_status(args)
       return {} unless SiteSetting.bbb_endpoint && SiteSetting.bbb_secret
 
@@ -58,6 +88,7 @@ module BigBlue
       data = Hash.from_xml(response.body)
 
       if data['response']['returncode'] == "SUCCESS"
+        running = (data['response']['running'] == "true") ? true : false
         att = data['response']['attendees']['attendee']
         usernames = att.is_a?(Array) ? att.pluck("userID") : [att["userID"]]
         users = User.where("username IN (?)", usernames)
@@ -71,7 +102,8 @@ module BigBlue
 
         {
           count: data['response']['participantCount'],
-          avatars: avatars
+          avatars: avatars,
+          running: running
         }
       else
         {}

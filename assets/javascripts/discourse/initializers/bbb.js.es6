@@ -35,14 +35,26 @@ function launchBBB($elem) {
 }
 
 function attachButton($elem) {
+  const data = $elem.data();
   const buttonLabel = $elem.data("label") || I18n.t("bbb.launch");
-
+  const buttonTitleNotYet = I18n.t("bbb.launch_notyet");
+  
   $elem.html(
-    `<button class='launch-bbb btn'>${iconHTML(
-      "video"
-    )} ${buttonLabel}</button>`
-  );
-  $elem.find("button").on("click", () => launchBBB($elem));
+        `<button class='launch-bbb btn'>${iconHTML(
+          "video"
+        )} ${buttonLabel}</button>`
+      );
+  
+  ajax(`/bbb/running/${data.meetingID}.json`).then((res) => {
+    if (res.running || !data.joinonly) {
+      $elem.find("button").on("click", () => launchBBB($elem));  
+    } else {
+      $elem.find("button").attr({title: buttonTitleNotYet});
+      $elem.find("button").html(`${iconHTML(
+          "video"
+        )} ${buttonLabel}<br><small>(${buttonTitleNotYet})</small>`);
+    }
+  });
 }
 
 function attachStatus($elem, helper) {
@@ -50,7 +62,10 @@ function attachStatus($elem, helper) {
   const data = $elem.data();
 
   ajax(`/bbb/status/${data.meetingID}.json`).then((res) => {
-    if (res.avatars) {
+    if (!res.running && !data.joinonly) {
+      status.html(`<span>Meeting not yet running</span>`);
+    }
+    else if (res.avatars) {
       status.html(`<span>On the call: </span>`);
       res.avatars.forEach(function(avatar) {
         status.append(

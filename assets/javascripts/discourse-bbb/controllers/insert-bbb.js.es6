@@ -20,6 +20,7 @@ export default Controller.extend(ModalFunctionality, {
       buttonText: "",
       mobileIframe: false,
       desktopIframe: true,
+      joinonly: false,
     });
   },
 
@@ -42,7 +43,7 @@ export default Controller.extend(ModalFunctionality, {
           this.meetingID
         }"${btnTxt} attendeePW="${this.randomID()}" moderatorPW="${this.randomID()}" mobileIframe="${
           this.mobileIframe
-        }" desktopIframe="${this.desktopIframe}"][/wrap]`
+        }" desktopIframe="${this.desktopIframe}" joinonly="false"][/wrap]`
       );
       this.send("closeModal");
     },

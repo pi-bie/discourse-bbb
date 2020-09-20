@@ -5,6 +5,7 @@ en:
       meetingID: Meeting ID
       button_text: Button label (optional)
       launch: Start Video Conference
+      launch_notyet: This meeting has not yet begun
       modal:
         insert: Insert
         cancel: Cancel

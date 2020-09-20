@@ -2,9 +2,9 @@
 
 # name: discourse-bbb
 # about: Integrate BigBlueButton in Discourse.
-# version: 1.0.0
+# version: 1.0.0+dev
 # authors: Penar Musaraj
-# url: https://github.com/pmusaraj/discourse-bbb
+# url: https://github.com/pi-bie/discourse-bbb
 
 enabled_site_setting :bbb_enabled
 register_asset "stylesheets/common/bbb.scss"
@@ -28,6 +28,7 @@ after_initialize do
   BigBlue::Engine.routes.draw do
     post '/create' => 'bbb_client#create', constraints: { format: :json }
     get '/status/:meeting_id' => 'bbb_client#status', constraints: { format: :json }
+    get '/running/:meeting_id' => 'bbb_client#running', constraints: { format: :json }
   end
 
   Discourse::Application.routes.append do
